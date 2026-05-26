@@ -1844,7 +1844,7 @@ function openTaskModal(id) {
   // Checklist section: collapsed by default unless task has items
   setChecklistOpen(editingChecklist.length > 0);
 
-  renderPills('fPriority', PRIORITIES.map(p => ({ ...p, dot: p.id })), t ? (t.priority || 'low') : 'low');
+  renderPills('fPriority', PRIORITIES.map(p => ({ ...p, dot: p.id })), t ? (t.priority || 'medium') : 'medium');
   renderCategorySelect(t ? (t.category || '') : '');
 
   document.getElementById('fDelete').style.display = t ? 'block' : 'none';
