@@ -661,16 +661,36 @@
   }
   .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  /* Category editor */
+  /* Category editor row in Settings — 2-row grid so it fits on mobile */
   .category-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    grid-template-areas:
+      "swatch emoji name   trash"
+      "parent parent parent parent";
+    column-gap: 8px;
+    row-gap: 8px;
     align-items: center;
-    gap: 10px;
     padding: 10px 12px;
     background: var(--bg-elev);
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
     margin-bottom: 6px;
+  }
+  .category-row.is-sub {
+    margin-left: 12px;
+    border-left: 3px solid var(--line);
+  }
+  .category-row .color-swatch { grid-area: swatch; }
+  .category-row .category-emoji-input { grid-area: emoji; }
+  .category-row .category-name-input {
+    grid-area: name;
+    min-width: 0; /* allow shrinking inside grid cell */
+  }
+  .category-row .icon-btn[data-action="delete"] { grid-area: trash; }
+  .category-row .category-parent-select {
+    grid-area: parent;
+    width: 100%;
   }
   .category-emoji-input {
     width: 44px;
@@ -683,7 +703,6 @@
     padding: 0;
   }
   .category-name-input {
-    flex: 1;
     border: none;
     background: transparent;
     font-size: 15px;
@@ -1029,9 +1048,9 @@
 
   /* Category row in settings: parent select */
   .category-parent-select {
-    width: 110px;
+    width: 100%;
     height: 30px;
-    padding: 0 22px 0 8px;
+    padding: 0 24px 0 10px;
     font-size: 12px;
     border-radius: 8px;
     border: 1px solid var(--line);
@@ -1040,7 +1059,6 @@
     font-family: inherit;
     -webkit-appearance: none;
     appearance: none;
-    flex-shrink: 0;
   }
 
   /* Two-column on wider screens */
@@ -2123,7 +2141,7 @@ function renderCategoryEditor() {
         `<option value="${t.id}" ${cat.parentId === t.id ? 'selected' : ''}>${t.icon} ${escapeHtml(t.name)}</option>`
       ).join('');
     return `
-    <div class="category-row" data-idx="${idx}" style="${indent ? 'margin-left: 20px;' : ''}">
+    <div class="category-row ${indent ? 'is-sub' : ''}" data-idx="${idx}">
       <label class="color-swatch" style="background: ${cat.color || '#9A8F82'};" aria-label="Pick color">
         <input type="color" value="${cat.color || '#9A8F82'}" data-field="color" />
       </label>
