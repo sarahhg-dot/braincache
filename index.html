@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
-<meta name="theme-color" content="#FAF7F2" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#1A1714" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#FAF7F2" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Brain Cache" />
@@ -16,6 +15,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
+  /* Theme variables. Defaults match the Cream theme.
+     Other themes are applied via data-theme on the <html> element. */
   :root {
     --bg: #FAF7F2;
     --bg-elev: #FFFFFF;
@@ -27,6 +28,7 @@
     --line-soft: #EFE9DE;
     --accent: #614051;
     --accent-soft: #ECD9E5;
+    --on-accent: #FFFFFF;
     --warn: #B33A20;
     --warn-bg: #FCEDE7;
     --priority-high: #C53030;
@@ -41,8 +43,92 @@
     --safe-top: env(safe-area-inset-top);
     --safe-bottom: env(safe-area-inset-bottom);
   }
+
+  /* Dark theme — warm dark with eggplant accent */
+  html[data-theme="dark"] {
+    --bg: #1A1714;
+    --bg-elev: #24201C;
+    --bg-sunk: #14110F;
+    --ink: #EBE3D9;
+    --ink-soft: #A89E91;
+    --ink-faint: #6B6359;
+    --line: #322D27;
+    --line-soft: #2A2521;
+    --accent: #B58AA8;
+    --accent-soft: #3A2632;
+    --on-accent: #1A1714;
+    --warn: #E07A52;
+    --warn-bg: #3A1F18;
+    --priority-high: #E07A52;
+    --priority-med: #E3B36A;
+    --priority-low: #6B6359;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+    --shadow-lift: 0 4px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Blue theme — cool slate with deep navy accent */
+  html[data-theme="blue"] {
+    --bg: #F2F5FA;
+    --bg-elev: #FFFFFF;
+    --bg-sunk: #E6ECF5;
+    --ink: #1A2740;
+    --ink-soft: #5A6B85;
+    --ink-faint: #8FA3BD;
+    --line: #D5DEEC;
+    --line-soft: #E5EBF3;
+    --accent: #2C5282;
+    --accent-soft: #D9E4F2;
+    --on-accent: #FFFFFF;
+    --warn: #B33A20;
+    --warn-bg: #FCEDE7;
+    --priority-high: #C53030;
+    --priority-med: #D4A044;
+    --priority-low: #8FA3BD;
+  }
+
+  /* Green theme — sage background with forest accent */
+  html[data-theme="green"] {
+    --bg: #F3F6F0;
+    --bg-elev: #FFFFFF;
+    --bg-sunk: #E6EDDF;
+    --ink: #1F2D1A;
+    --ink-soft: #5A6B4F;
+    --ink-faint: #8FA084;
+    --line: #D5DFC8;
+    --line-soft: #E5ECD9;
+    --accent: #3D6B47;
+    --accent-soft: #DBE7DC;
+    --on-accent: #FFFFFF;
+    --warn: #B33A20;
+    --warn-bg: #FCEDE7;
+    --priority-high: #C53030;
+    --priority-med: #D4A044;
+    --priority-low: #8FA084;
+  }
+
+  /* Purple theme — lilac background with plum accent */
+  html[data-theme="purple"] {
+    --bg: #F5F2F6;
+    --bg-elev: #FFFFFF;
+    --bg-sunk: #ECE5EE;
+    --ink: #2A1F2E;
+    --ink-soft: #6B5570;
+    --ink-faint: #A48BA8;
+    --line: #DECEDB;
+    --line-soft: #E8DCE4;
+    --accent: #6E4A6E;
+    --accent-soft: #E5D6E2;
+    --on-accent: #FFFFFF;
+    --warn: #B33A20;
+    --warn-bg: #FCEDE7;
+    --priority-high: #C53030;
+    --priority-med: #D4A044;
+    --priority-low: #A48BA8;
+  }
+
+  /* Auto theme: follow OS preference. Applied when data-theme="auto" AND the OS is dark. */
   @media (prefers-color-scheme: dark) {
-    :root {
+    html[data-theme="auto"] {
       --bg: #1A1714;
       --bg-elev: #24201C;
       --bg-sunk: #14110F;
@@ -53,6 +139,7 @@
       --line-soft: #2A2521;
       --accent: #B58AA8;
       --accent-soft: #3A2632;
+      --on-accent: #1A1714;
       --warn: #E07A52;
       --warn-bg: #3A1F18;
       --priority-high: #E07A52;
@@ -145,7 +232,7 @@
   }
   .stat-chip.active {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
     border-color: var(--accent);
   }
   .stat-chip .count {
@@ -242,35 +329,6 @@
     transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
-  }
-  .task-delete-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
-    border: none;
-    background: transparent;
-    color: var(--ink-faint);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    opacity: 0;
-    transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
-    z-index: 2;
-  }
-  .task-delete-btn svg { width: 14px; height: 14px; }
-  .task:hover .task-delete-btn { opacity: 1; }
-  .task-delete-btn:hover {
-    color: var(--warn);
-    background: var(--warn-bg);
-  }
-  @media (hover: none) {
-    /* On touch devices, show subtly so it's discoverable but not loud */
-    .task-delete-btn { opacity: 0.4; }
   }
   .task.overdue {
     border-color: var(--warn);
@@ -412,6 +470,10 @@
   .icon-btn:hover {
     background: var(--bg-sunk);
     color: var(--ink);
+  }
+  #fHeaderDelete:hover {
+    background: var(--warn-bg);
+    color: var(--warn);
   }
 
   /* Empty state */
@@ -609,7 +671,7 @@
   }
   .pill.active {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
     border-color: var(--accent);
   }
   .pill .dot {
@@ -642,7 +704,7 @@
   }
   .btn-primary {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
     border-color: var(--accent);
   }
   .btn-primary:hover { background: var(--accent); border-color: var(--accent); opacity: 0.92; }
@@ -656,7 +718,7 @@
   }
   .btn-danger-filled {
     background: var(--warn);
-    color: white;
+    color: var(--on-accent);
     border-color: var(--warn);
   }
   .btn-danger-filled:hover { background: var(--warn); border-color: var(--warn); opacity: 0.92; }
@@ -842,7 +904,7 @@
   }
   .day-pill.active {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
     border-color: var(--accent);
   }
   .interval-row {
@@ -918,7 +980,7 @@
   .all-day-toggle:hover { color: var(--ink); border-color: var(--ink-faint); }
   .all-day-toggle[aria-pressed="true"] {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
     border-color: var(--accent);
   }
   .deadline-row input[type="time"]:disabled {
@@ -946,7 +1008,7 @@
   }
   .recur-toggle.open {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
     border-color: var(--accent);
   }
   .recur-toggle svg { width: 18px; height: 18px; }
@@ -1158,9 +1220,14 @@
     <div class="modal-handle"></div>
     <div class="modal-header">
       <h2 class="modal-title" id="taskModalTitle">New task</h2>
-      <button class="icon-btn" data-close="taskModal" aria-label="Close">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-      </button>
+      <div style="display: flex; gap: 4px;">
+        <button class="icon-btn" id="fHeaderDelete" aria-label="Delete task" title="Delete task" style="display: none;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+        <button class="icon-btn" data-close="taskModal" aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
     </div>
     <div class="modal-body">
       <div class="field">
@@ -1267,6 +1334,10 @@
     </div>
     <div class="modal-body">
       <div class="field">
+        <label class="field-label">Theme</label>
+        <select class="select" id="themeSelect"></select>
+      </div>
+      <div class="field">
         <label class="field-label">Notifications</label>
         <button class="btn" id="notifBtn" style="width: 100%;">Enable notifications</button>
         <p style="font-size: 12px; color: var(--ink-soft); margin: 8px 4px 0; line-height: 1.5;">
@@ -1313,6 +1384,47 @@
 </div>
 
 <script>
+//  ----- Theme -----
+const THEMES = [
+  { id: 'auto',   label: 'Match system (light/dark)' },
+  { id: 'cream',  label: 'Cream (default)' },
+  { id: 'dark',   label: 'Dark' },
+  { id: 'blue',   label: 'Blue' },
+  { id: 'green',  label: 'Green' },
+  { id: 'purple', label: 'Purple' }
+];
+const THEME_KEY = 'tasks_app_theme';
+
+function loadTheme() {
+  try { return localStorage.getItem(THEME_KEY) || 'cream'; }
+  catch { return 'cream'; }
+}
+function saveTheme(themeId) {
+  try { localStorage.setItem(THEME_KEY, themeId); } catch {}
+}
+function applyTheme(themeId) {
+  // "cream" is the default :root state — clear the attribute so we use the base variables
+  if (themeId === 'cream') {
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', themeId);
+  }
+  // Update the iOS PWA status bar theme color to match the new background
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  if (bg) {
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.name = 'theme-color';
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', bg);
+  }
+}
+
+// Apply early so we don't get a flash of the wrong theme
+applyTheme(loadTheme());
+
 //  ----- Constants -----
 const STORAGE_KEY = 'tasks_app_v1';
 const DEFAULT_CATEGORIES = [
@@ -1810,23 +1922,6 @@ function renderTasks() {
       e.stopPropagation();
       toggleTask(id);
     });
-    el.querySelector('.task-delete-btn').addEventListener('click', (e) => {
-      e.stopPropagation();
-      const task = state.tasks.find(x => x.id === id);
-      if (!task) return;
-      confirmAction({
-        title: 'Delete this task?',
-        body: `"${task.title}" and its checklist will be permanently removed.`,
-        confirmLabel: 'Delete',
-        danger: true,
-        onConfirm: () => {
-          state.tasks = state.tasks.filter(t => t.id !== id);
-          saveState();
-          render();
-          toast('Task deleted');
-        }
-      });
-    });
     el.querySelector('.task-content').addEventListener('click', () => openTaskModal(id));
   });
 
@@ -1879,9 +1974,6 @@ function renderTask(t) {
   return `
     <div class="task ${overdue ? 'overdue' : ''} ${t.completed ? 'completed' : ''}" data-id="${t.id}" style="${bgStyle}${borderStyle}">
       <button class="task-checkbox" aria-label="Toggle done"></button>
-      <button class="task-delete-btn" aria-label="Delete task" title="Delete task">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
-      </button>
       <div class="task-content">
         <div class="task-row-1">
           ${priorityMark}
@@ -1948,6 +2040,7 @@ function openTaskModal(id) {
   renderCategorySelect(t ? (t.category || '') : '');
 
   document.getElementById('fDelete').style.display = t ? 'block' : 'none';
+  document.getElementById('fHeaderDelete').style.display = t ? 'inline-flex' : 'none';
   openModal('taskModal');
   setTimeout(() => document.getElementById('fTitle').focus(), 200);
 }
@@ -2337,7 +2430,19 @@ function renderCategoryEditor() {
 document.getElementById('settingsBtn').addEventListener('click', () => {
   renderCategoryEditor();
   updateNotifBtn();
+  // Populate and select current theme
+  const sel = document.getElementById('themeSelect');
+  sel.innerHTML = THEMES.map(t =>
+    `<option value="${t.id}">${t.label}</option>`
+  ).join('');
+  sel.value = loadTheme();
   openModal('settingsModal');
+});
+
+document.getElementById('themeSelect').addEventListener('change', (e) => {
+  const theme = e.target.value;
+  saveTheme(theme);
+  applyTheme(theme);
 });
 
 document.getElementById('addCategoryBtn').addEventListener('click', () => {
@@ -2653,6 +2758,15 @@ document.getElementById('fDelete').addEventListener('click', () => {
     onConfirm: deleteTask
   });
 });
+document.getElementById('fHeaderDelete').addEventListener('click', () => {
+  confirmAction({
+    title: 'Delete this task?',
+    body: 'This task and its checklist will be removed.',
+    confirmLabel: 'Delete',
+    danger: true,
+    onConfirm: deleteTask
+  });
+});
 
 // Save on enter in title
 document.getElementById('fTitle').addEventListener('keydown', (e) => {
@@ -2663,6 +2777,13 @@ document.getElementById('fTitle').addEventListener('keydown', (e) => {
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+// React to OS theme changes when set to Auto so iOS status bar color updates too
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (loadTheme() === 'auto') applyTheme('auto');
   });
 }
 
