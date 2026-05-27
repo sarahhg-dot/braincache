@@ -184,7 +184,12 @@
     justify-content: space-between;
     margin: 24px 0 10px;
     padding: 0 4px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: opacity 0.15s ease;
   }
+  .section-header:hover { opacity: 0.7; }
   .section-title {
     font-family: 'Fraunces', Georgia, serif;
     font-size: 14px;
@@ -193,6 +198,9 @@
     text-transform: uppercase;
     color: var(--ink-soft);
     margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
   .section-title.overdue {
     color: var(--warn);
@@ -201,6 +209,19 @@
     font-size: 13px;
     color: var(--ink-faint);
     font-variant-numeric: tabular-nums;
+  }
+  .section-chevron {
+    width: 14px;
+    height: 14px;
+    color: var(--ink-faint);
+    transition: transform 0.18s ease;
+    flex-shrink: 0;
+  }
+  .task-group.collapsed .section-chevron {
+    transform: rotate(-90deg);
+  }
+  .task-group.collapsed .task-list {
+    display: none;
   }
 
   /* Task card */
@@ -221,6 +242,35 @@
     transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
+  }
+  .task-delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--ink-faint);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+    z-index: 2;
+  }
+  .task-delete-btn svg { width: 14px; height: 14px; }
+  .task:hover .task-delete-btn { opacity: 1; }
+  .task-delete-btn:hover {
+    color: var(--warn);
+    background: var(--warn-bg);
+  }
+  @media (hover: none) {
+    /* On touch devices, show subtly so it's discoverable but not loud */
+    .task-delete-btn { opacity: 0.4; }
   }
   .task.overdue {
     border-color: var(--warn);
@@ -1266,17 +1316,8 @@
 //  ----- Constants -----
 const STORAGE_KEY = 'tasks_app_v1';
 const DEFAULT_CATEGORIES = [
-  // Top-level
-  { id: 'personal',   name: 'Personal',   icon: '🏠', color: '#614051', parentId: null },
-  { id: 'work',       name: 'Work',       icon: '💼', color: '#2D6E6E', parentId: null },
-  // Personal subcategories
-  { id: 'health',     name: 'Health',     icon: '💪', color: '#7A8B5C', parentId: 'personal' },
-  { id: 'family',     name: 'Family',     icon: '🧡', color: '#B0676A', parentId: 'personal' },
-  { id: 'errands',    name: 'Errands',    icon: '🛒', color: '#D4A044', parentId: 'personal' },
-  { id: 'cleaning',   name: 'Cleaning',   icon: '🧹', color: '#8B8275', parentId: 'personal' },
-  { id: 'organizing', name: 'Organizing', icon: '🗂️', color: '#9A85B0', parentId: 'personal' },
-  { id: 'finance',    name: 'Finance',    icon: '💰', color: '#6E7A3A', parentId: 'personal' },
-  { id: 'school',     name: 'School',     icon: '📚', color: '#5E6BA8', parentId: 'personal' }
+  { id: 'personal', name: 'Personal', icon: '🏠', color: '#614051', parentId: null },
+  { id: 'work',     name: 'Work',     icon: '💼', color: '#2D6E6E', parentId: null }
 ];
 const DAY_NAMES = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const DAY_NAMES_FULL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -1294,6 +1335,26 @@ const ICON_PRIORITY_HIGH_SVG = `<svg class="priority-icon-high" viewBox="0 0 24 
 
 // Smaller version for filter chip
 const ICON_PRIORITY_HIGH_SVG_SMALL = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M12 7v6" stroke="white" stroke-width="2.5" stroke-linecap="round"/><circle cx="12" cy="17" r="1.4" fill="white"/></svg>`;
+
+// SVG chevron used in section headers to indicate collapse state
+const ICON_CHEVRON_SVG = `<svg class="section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+// Persisted collapsed-group state
+const COLLAPSE_KEY = 'tasks_app_collapsed_groups';
+function loadCollapseState() {
+  try { return JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}'); }
+  catch { return {}; }
+}
+function saveCollapseState() {
+  try { localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapsedGroups)); } catch {}
+}
+let collapsedGroups = loadCollapseState();
+
+function toggleGroupCollapse(key) {
+  collapsedGroups[key] = !collapsedGroups[key];
+  saveCollapseState();
+  renderTasks();
+}
 
 //  ----- State -----
 let state = loadState();
@@ -1398,6 +1459,15 @@ function sameDay(a, b) {
 
 function startOfDay(d) {
   const n = new Date(d); n.setHours(0,0,0,0); return n;
+}
+
+function endOfWeek(d) {
+  // Returns the last moment of the current calendar week (Saturday 23:59:59.999)
+  const n = new Date(d);
+  const daysUntilSat = 6 - n.getDay();
+  n.setDate(n.getDate() + daysUntilSat);
+  n.setHours(23, 59, 59, 999);
+  return n;
 }
 
 function addUnit(d, n, unit) {
@@ -1536,20 +1606,20 @@ function renderDate() {
 
 function renderFilters() {
   const now = new Date();
+  const weekEnd = endOfWeek(now);
   const overdueCount = state.tasks.filter(t => !t.completed && isOverdue(t)).length;
-  const todayCount = state.tasks.filter(t => {
-    if (t.completed || !t.deadline) return false;
-    return sameDay(new Date(t.deadline), now) && !isOverdue(t);
+  const focusCount = state.tasks.filter(t => {
+    if (t.completed) return false;
+    if (!t.deadline) return true;
+    return new Date(t.deadline) <= weekEnd;
   }).length;
-  const noDeadlineCount = state.tasks.filter(t => !t.completed && !t.deadline).length;
-  const focusCount = overdueCount + todayCount + noDeadlineCount;
   const upcomingCount = state.tasks.filter(t => {
     if (t.completed || !t.deadline) return false;
-    return new Date(t.deadline) > now && !sameDay(new Date(t.deadline), now);
+    return new Date(t.deadline) > weekEnd;
   }).length;
   const doneCount = state.tasks.filter(t => t.completed).length;
   const highPriorityCount = state.tasks.filter(t => !t.completed && t.priority === 'high').length;
-  const allCount = state.tasks.length;
+  const allCount = state.tasks.filter(t => !t.completed).length;
 
   // Line 1: system filters
   const line1 = [
@@ -1616,21 +1686,21 @@ function renderFilters() {
 
 function filterTasks(tasks) {
   const now = new Date();
-  if (activeFilter === 'all') return tasks;
+  if (activeFilter === 'all') return tasks.filter(t => !t.completed);
   if (activeFilter === 'high-priority') return tasks.filter(t => !t.completed && t.priority === 'high');
   if (activeFilter === 'focus') {
+    const weekEnd = endOfWeek(now);
     return tasks.filter(t => {
       if (t.completed) return false;
       if (!t.deadline) return true;
-      if (isOverdue(t)) return true;
-      return sameDay(new Date(t.deadline), now);
+      return new Date(t.deadline) <= weekEnd;
     });
   }
   if (activeFilter === 'upcoming') {
+    const weekEnd = endOfWeek(now);
     return tasks.filter(t => {
       if (t.completed || !t.deadline) return false;
-      const d = new Date(t.deadline);
-      return d > now && !sameDay(d, now);
+      return new Date(t.deadline) > weekEnd;
     });
   }
   if (activeFilter === 'completed') return tasks.filter(t => t.completed);
@@ -1667,7 +1737,7 @@ function renderTasks() {
     if (activeFilter === 'completed') { title = 'Nothing completed yet'; sub = 'Finished tasks land here.'; }
     else if (activeFilter === 'upcoming') { title = 'Nothing coming up'; sub = 'Future-dated tasks will show here.'; }
     else if (activeFilter === 'overdue') { title = 'Nothing overdue'; sub = 'You\u2019re caught up.'; }
-    else if (activeFilter === 'focus') { title = 'All clear for today'; sub = 'Nothing due today or overdue.'; }
+    else if (activeFilter === 'focus') { title = 'All clear'; sub = 'Nothing due this week or overdue.'; }
     else if (activeFilter === 'all') { title = 'Nothing here yet'; sub = 'Tap the + button to add your first task.'; }
     else if (activeFilter === 'high-priority') { title = 'No high-priority tasks'; sub = 'Anything urgent will show here.'; }
     container.innerHTML = `<div class="empty"><h3 class="empty-title">${title}</h3><p class="empty-sub">${sub}</p></div>`;
@@ -1678,7 +1748,7 @@ function renderTasks() {
   const groups = { overdue: [], today: [], tomorrow: [], thisWeek: [], later: [], someday: [], completed: [] };
   const now = new Date();
   const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
-  const weekEnd = new Date(now); weekEnd.setDate(weekEnd.getDate() + 7);
+  const weekEnd = endOfWeek(now);
 
   tasks.forEach(t => {
     if (t.completed) { groups.completed.push(t); return; }
@@ -1687,7 +1757,7 @@ function renderTasks() {
     if (isOverdue(t)) groups.overdue.push(t);
     else if (sameDay(d, now)) groups.today.push(t);
     else if (sameDay(d, tomorrow)) groups.tomorrow.push(t);
-    else if (d < weekEnd) groups.thisWeek.push(t);
+    else if (d <= weekEnd) groups.thisWeek.push(t);
     else groups.later.push(t);
   });
 
@@ -1703,17 +1773,19 @@ function renderTasks() {
 
   let listHtml = groupConfig
     .filter(g => groups[g.key].length > 0)
-    .map(g => `
-      <div>
+    .map(g => {
+      const isCollapsed = !!collapsedGroups[g.key];
+      return `
+      <div class="task-group ${isCollapsed ? 'collapsed' : ''}" data-group-key="${g.key}">
         <div class="section-header">
-          <h3 class="section-title ${g.cls || ''}">${g.label}</h3>
+          <h3 class="section-title ${g.cls || ''}">${ICON_CHEVRON_SVG}${g.label}</h3>
           <span class="section-count">${groups[g.key].length}</span>
         </div>
         <div class="task-list">
           ${groups[g.key].map(renderTask).join('')}
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
 
   // On Done filter: append a link to clear completed tasks older than 7 days
   let oldCount = 0;
@@ -1738,7 +1810,32 @@ function renderTasks() {
       e.stopPropagation();
       toggleTask(id);
     });
+    el.querySelector('.task-delete-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const task = state.tasks.find(x => x.id === id);
+      if (!task) return;
+      confirmAction({
+        title: 'Delete this task?',
+        body: `"${task.title}" and its checklist will be permanently removed.`,
+        confirmLabel: 'Delete',
+        danger: true,
+        onConfirm: () => {
+          state.tasks = state.tasks.filter(t => t.id !== id);
+          saveState();
+          render();
+          toast('Task deleted');
+        }
+      });
+    });
     el.querySelector('.task-content').addEventListener('click', () => openTaskModal(id));
+  });
+
+  // Wire up section header collapse toggles
+  container.querySelectorAll('.task-group .section-header').forEach(el => {
+    el.addEventListener('click', () => {
+      const key = el.closest('.task-group').dataset.groupKey;
+      toggleGroupCollapse(key);
+    });
   });
 
   // Wire up clear-old-completed link
@@ -1782,6 +1879,9 @@ function renderTask(t) {
   return `
     <div class="task ${overdue ? 'overdue' : ''} ${t.completed ? 'completed' : ''}" data-id="${t.id}" style="${bgStyle}${borderStyle}">
       <button class="task-checkbox" aria-label="Toggle done"></button>
+      <button class="task-delete-btn" aria-label="Delete task" title="Delete task">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
+      </button>
       <div class="task-content">
         <div class="task-row-1">
           ${priorityMark}
@@ -1913,6 +2013,10 @@ function renderChecklistEditor() {
     row.querySelector('.checklist-check').addEventListener('click', () => {
       editingChecklist[idx].done = !editingChecklist[idx].done;
       renderChecklistEditor();
+      // If every item is now done, surface a hint that the task will auto-complete on save
+      if (editingChecklist.length > 0 && editingChecklist.every(i => i.done)) {
+        toast('All items done. Task will complete when you save.');
+      }
     });
     const input = row.querySelector('.checklist-text');
     input.addEventListener('input', () => {
@@ -2044,17 +2148,28 @@ function saveTask() {
     recurrence.unit = document.getElementById('fRecurrenceUnit').value;
   }
 
+  const finalChecklist = editingChecklist.filter(i => i.text.trim());
+  // If the checklist has items and they're all checked, mark the task complete
+  const allChecklistDone = finalChecklist.length > 0 && finalChecklist.every(i => i.done);
+
   if (editingTaskId) {
     const t = state.tasks.find(x => x.id === editingTaskId);
-    Object.assign(t, { title, notes, deadline, allDay, recurrence, priority, category, checklist: editingChecklist.filter(i => i.text.trim()) });
+    const wasCompleted = t.completed;
+    Object.assign(t, { title, notes, deadline, allDay, recurrence, priority, category, checklist: finalChecklist });
     if (deadline && new Date(deadline) > new Date()) t.lastNagged = null;
+    // Auto-complete if all items checked and task wasn't already complete
+    if (allChecklistDone && !wasCompleted) {
+      handleAutoComplete(t);
+    }
   } else {
-    state.tasks.push({
+    const newTask = {
       id: uid(), title, notes, deadline, allDay, recurrence, priority, category,
-      checklist: editingChecklist.filter(i => i.text.trim()),
+      checklist: finalChecklist,
       completed: false, completedAt: null, createdAt: new Date().toISOString(),
       lastNagged: null
-    });
+    };
+    state.tasks.push(newTask);
+    if (allChecklistDone) handleAutoComplete(newTask);
   }
   saveState();
   closeModal('taskModal');
@@ -2069,6 +2184,29 @@ function deleteTask() {
   closeModal('taskModal');
   render();
   toast('Task deleted');
+}
+
+function handleAutoComplete(t) {
+  // Mark complete with timestamp
+  t.completed = true;
+  t.completedAt = new Date().toISOString();
+  // If recurring, spawn the next instance with a fresh (unchecked) checklist
+  if (t.recurrence && t.recurrence.kind && t.recurrence.kind !== 'none' && t.deadline) {
+    const nextDate = computeNextDeadline(t.deadline, t.recurrence);
+    if (nextDate) {
+      state.tasks.push({
+        id: uid(),
+        title: t.title, notes: t.notes, deadline: nextDate.toISOString(),
+        allDay: !!t.allDay,
+        recurrence: JSON.parse(JSON.stringify(t.recurrence)),
+        priority: t.priority, category: t.category,
+        checklist: (t.checklist || []).map(item => ({ id: uid(), text: item.text, done: false })),
+        completed: false, completedAt: null, createdAt: new Date().toISOString(),
+        lastNagged: null
+      });
+    }
+  }
+  toast('Task completed');
 }
 
 function toggleTask(id) {
